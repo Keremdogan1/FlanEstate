@@ -84,7 +84,7 @@ public class SignEventHandler {
                                     if (state.removeBalance(serverPlayer.getUuid(), price)) {
                                         state.addBalance(ownerUuid, price);
                                         claim.setPlayerGroup(serverPlayer.getUuid(), "Co-Owner", true);
-                                        EstateState.getServerState(serverPlayer.getServer()).addRentedProperty(claim.getClaimID(), serverPlayer.getUuid(), ownerUuid, price, world.getTimeOfDay());
+                                        EstateState.getServerState(serverPlayer.getServer()).addRentedProperty(claim.getClaimID(), serverPlayer.getUuid(), ownerUuid, price, world.getTimeOfDay(), pos);
                                         serverPlayer.sendMessage(Text.literal("§aEv başarıyla kiralandı! İlk kiranız (" + price + " AK Lira) kesildi."), false);
                                     }
                                 } else {

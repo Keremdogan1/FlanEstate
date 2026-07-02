@@ -112,7 +112,7 @@ public class TabIntegration {
 
             // 3. Optional: If no rented properties, could show owned property (but skipped to save performance, and user usually knows their house unless inside it).
             // Clear if nothing applies
-            cache.put(pUuid, new EmlakInfo("", "", ""));
+            cache.put(pUuid, new EmlakInfo("&6&l🏠 Emlak Varlıkları", "&7Ev Durumu: &cYok", "&7Kira: &cYok"));
         }
     }
 

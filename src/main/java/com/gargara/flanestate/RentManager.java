@@ -47,8 +47,8 @@ public class RentManager {
                                         prop.lastPaidTime = currentTime;
                                         estateState.markDirty();
                                         
-                                        renter.sendMessage(Text.literal("§a[Emlak] Kiranız (" + prop.price + " AK Lira) ödendi."), false);
-                                        
+                                        renter.sendMessage(Text.literal("§a[Emlak] Kiranız başarıyla ödendi: " + prop.price + " AK Lira."), false);
+
                                         // Unlock if it was locked
                                         if (prop.lockedOut) {
                                             prop.lockedOut = false;
@@ -61,11 +61,22 @@ public class RentManager {
                                     // Lock out due to insufficient funds
                                     if (!prop.lockedOut) {
                                         prop.lockedOut = true;
-                                        // Update time so it doesn't spam, wait for next day or payment?
-                                        // Actually if we lock it, we just wait until they have money.
-                                        // We shouldn't advance lastPaidTime because they still OWE this money.
                                         claim.setPlayerGroup(prop.renterUuid, null, true); // Remove from Co-Owner
-                                        renter.sendMessage(Text.literal("§c[Emlak] Kirayı ödeyemediğiniz için evinize girişiniz kilitlendi!"), false);
+                                        
+                                        // Teleport out if they are inside the claim
+                                        Claim currentClaim = ClaimStorage.get((net.minecraft.server.world.ServerWorld) renter.getWorld()).getClaimAt(renter.getBlockPos());
+                                        if (currentClaim != null && currentClaim.getClaimID().equals(claim.getClaimID())) {
+                                            if (prop.signPos != null) {
+                                                renter.teleport((net.minecraft.server.world.ServerWorld) renter.getWorld(), prop.signPos.getX() + 0.5, prop.signPos.getY(), prop.signPos.getZ() + 0.5, renter.getYaw(), renter.getPitch());
+                                                renter.sendMessage(Text.literal("§c[Emlak] Kirayı ödeyemediğiniz için evden tahliye edildiniz (Tabelaya Işınlandınız)!"), false);
+                                            } else {
+                                                net.minecraft.util.math.BlockPos spawnPos = ((net.minecraft.server.world.ServerWorld) renter.getWorld()).getSpawnPos();
+                                                renter.teleport((net.minecraft.server.world.ServerWorld) renter.getWorld(), spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5, renter.getYaw(), renter.getPitch());
+                                                renter.sendMessage(Text.literal("§c[Emlak] Kirayı ödeyemediğiniz için evden tahliye edildiniz (Başlangıca Işınlandınız)!"), false);
+                                            }
+                                        } else {
+                                            renter.sendMessage(Text.literal("§c[Emlak] Kirayı ödeyemediğiniz için evinize girişiniz kilitlendi!"), false);
+                                        }
                                         estateState.markDirty();
                                     } else {
                                         renter.sendMessage(Text.literal("§c[Emlak] Kilitli evinizin kirası gecikti. Lütfen para yükleyin."), false);

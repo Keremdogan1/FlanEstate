@@ -13,6 +13,7 @@ import net.minecraft.world.World;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import net.minecraft.util.math.BlockPos;
 
 public class EstateState extends PersistentState {
 
@@ -22,20 +23,22 @@ public class EstateState extends PersistentState {
         public double price;
         public long lastPaidTime;
         public boolean lockedOut;
+        public BlockPos signPos;
 
-        public RentedProperty(UUID renterUuid, UUID ownerUuid, double price, long lastPaidTime, boolean lockedOut) {
+        public RentedProperty(UUID renterUuid, UUID ownerUuid, double price, long lastPaidTime, boolean lockedOut, BlockPos signPos) {
             this.renterUuid = renterUuid;
             this.ownerUuid = ownerUuid;
             this.price = price;
             this.lastPaidTime = lastPaidTime;
             this.lockedOut = lockedOut;
+            this.signPos = signPos;
         }
     }
 
     private final Map<UUID, RentedProperty> rentedProperties = new HashMap<>();
 
-    public void addRentedProperty(UUID claimUuid, UUID renterUuid, UUID ownerUuid, double price, long timeOfDay) {
-        rentedProperties.put(claimUuid, new RentedProperty(renterUuid, ownerUuid, price, timeOfDay, false));
+    public void addRentedProperty(UUID claimUuid, UUID renterUuid, UUID ownerUuid, double price, long timeOfDay, BlockPos signPos) {
+        rentedProperties.put(claimUuid, new RentedProperty(renterUuid, ownerUuid, price, timeOfDay, false, signPos));
         this.markDirty();
     }
 
@@ -59,7 +62,11 @@ public class EstateState extends PersistentState {
             double price = comp.getDouble("Price");
             long lastPaidTime = comp.getLong("LastPaidTime");
             boolean lockedOut = comp.getBoolean("LockedOut");
-            state.rentedProperties.put(claimUuid, new RentedProperty(renterUuid, ownerUuid, price, lastPaidTime, lockedOut));
+            BlockPos signPos = null;
+            if (comp.contains("SignPosX")) {
+                signPos = new BlockPos(comp.getInt("SignPosX"), comp.getInt("SignPosY"), comp.getInt("SignPosZ"));
+            }
+            state.rentedProperties.put(claimUuid, new RentedProperty(renterUuid, ownerUuid, price, lastPaidTime, lockedOut, signPos));
         }
         return state;
     }
@@ -75,6 +82,11 @@ public class EstateState extends PersistentState {
             comp.putDouble("Price", entry.getValue().price);
             comp.putLong("LastPaidTime", entry.getValue().lastPaidTime);
             comp.putBoolean("LockedOut", entry.getValue().lockedOut);
+            if (entry.getValue().signPos != null) {
+                comp.putInt("SignPosX", entry.getValue().signPos.getX());
+                comp.putInt("SignPosY", entry.getValue().signPos.getY());
+                comp.putInt("SignPosZ", entry.getValue().signPos.getZ());
+            }
             list.add(comp);
         }
         tag.put("RentedProperties", list);
