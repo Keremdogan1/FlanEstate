@@ -30,7 +30,7 @@ public class SignEventHandler {
                 if (line1.equalsIgnoreCase("[Emlak]") || line1.equalsIgnoreCase("[FlanEstate]")) {
                     String type = sign.getFrontText().getMessage(1, false).getString().trim();
                     String priceStr = sign.getFrontText().getMessage(2, false).getString().trim();
-                    String ownerSecretId = sign.getFrontText().getMessage(3, false).getString().trim();
+                    String ownerName = sign.getFrontText().getMessage(3, false).getString().trim();
                     
                     if (type.equalsIgnoreCase("Satilik") || type.equalsIgnoreCase("Kiralik")) {
                         ServerPlayerEntity serverPlayer = (ServerPlayerEntity) player;
@@ -41,18 +41,27 @@ public class SignEventHandler {
                             double balance = state.getBalance(serverPlayer.getUuid());
                             
                             ClaimStorage storage = ClaimStorage.get(serverPlayer.getServerWorld());
-                            Claim claim = storage.getClaimAt(pos);
+                            
+                            // Check the block the sign is attached to if it's a wall sign
+                            net.minecraft.block.BlockState blockState = world.getBlockState(pos);
+                            BlockPos claimPos = pos;
+                            if (blockState.getBlock() instanceof net.minecraft.block.WallSignBlock) {
+                                claimPos = pos.offset(blockState.get(net.minecraft.block.WallSignBlock.FACING).getOpposite());
+                            }
+                            
+                            Claim claim = storage.getClaimAt(claimPos);
                             
                             if (claim == null) {
                                 serverPlayer.sendMessage(Text.literal("§cBu tabela bir koruma alanının (Claim) içinde değil!"), false);
                                 return ActionResult.SUCCESS;
                             }
                             
-                            UUID ownerUuid = state.getUuidFromId(ownerSecretId);
-                            if (ownerUuid == null) {
-                                serverPlayer.sendMessage(Text.literal("§cGeçersiz Secret ID (Ev Sahibi Bulunamadı)!"), false);
+                            java.util.Optional<com.mojang.authlib.GameProfile> profile = serverPlayer.getServer().getUserCache().findByName(ownerName);
+                            if (profile.isEmpty()) {
+                                serverPlayer.sendMessage(Text.literal("§cGeçersiz Ev Sahibi (Böyle bir oyuncu bulunamadı)!"), false);
                                 return ActionResult.SUCCESS;
                             }
+                            UUID ownerUuid = profile.get().getId();
                             
                             if (claim.getOwner().equals(serverPlayer.getUuid())) {
                                 serverPlayer.sendMessage(Text.literal("§cKendi evini satın alamazsın!"), false);
