@@ -13,5 +13,6 @@ public class FlanEstate implements ModInitializer {
         LOGGER.info("FlanEstate Mod Initialized!");
         SignEventHandler.register();
         RentManager.register();
+        com.gargara.flanestate.integration.TabIntegration.register();
     }
 }

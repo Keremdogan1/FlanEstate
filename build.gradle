@@ -32,6 +32,9 @@ dependencies {
 	
 	// Flan for 1.20.1
 	modCompileOnly name: 'flan-1.20.1-1.11.16-fabric'
+	
+	// TAB API
+	modCompileOnly name: 'TAB_v4.1.6'
 }
 
 jar {
