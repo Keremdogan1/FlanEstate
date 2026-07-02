@@ -1,0 +1,25 @@
+{
+	"schemaVersion": 1,
+	"id": "flanestate",
+	"version": "${version}",
+	"name": "FlanEstate",
+	"description": "Fabric 1.20.1 Real Estate mod integrating Flan and SecretID.",
+	"authors": [
+		"Gargara"
+	],
+	"contact": {},
+	"license": "CC0-1.0",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.gargara.flanestate.FlanEstate"
+		]
+	},
+	"mixins": [],
+	"depends": {
+		"fabricloader": ">=0.15.0",
+		"minecraft": "~1.20.1",
+		"java": ">=17",
+		"fabric-api": "*"
+	}
+}
