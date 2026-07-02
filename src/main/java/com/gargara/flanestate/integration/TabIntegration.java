@@ -29,38 +29,42 @@ public class TabIntegration {
 
     private static final Map<UUID, EmlakInfo> cache = new HashMap<>();
     private static int tickCounter = 0;
+    private static boolean tabPlaceholdersRegistered = false;
 
     public static void register() {
-        net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STARTED.register(server -> {
-            try {
-                // Register server tick event to update cache every second
-                ServerTickEvents.END_SERVER_TICK.register(tickServer -> {
-                    tickCounter++;
-                    if (tickCounter >= 20) { // 1 second
-                        tickCounter = 0;
-                        updateCache(tickServer);
+        // Register server tick event - both for cache updates AND lazy TAB registration
+        ServerTickEvents.END_SERVER_TICK.register(server -> {
+            tickCounter++;
+            if (tickCounter >= 20) { // 1 second
+                tickCounter = 0;
+                updateCache(server);
+            }
+
+            // Lazy TAB registration - wait until TAB API is actually ready
+            if (!tabPlaceholdersRegistered) {
+                try {
+                    if (TabAPI.getInstance() != null) {
+                        TabAPI.getInstance().getPlaceholderManager().registerPlayerPlaceholder("%emlak_baslik%", 1000, tabPlayer -> {
+                            EmlakInfo info = cache.get(tabPlayer.getUniqueId());
+                            return info != null ? info.baslik : "";
+                        });
+
+                        TabAPI.getInstance().getPlaceholderManager().registerPlayerPlaceholder("%emlak_satir1%", 1000, tabPlayer -> {
+                            EmlakInfo info = cache.get(tabPlayer.getUniqueId());
+                            return info != null ? info.satir1 : "";
+                        });
+
+                        TabAPI.getInstance().getPlaceholderManager().registerPlayerPlaceholder("%emlak_satir2%", 1000, tabPlayer -> {
+                            EmlakInfo info = cache.get(tabPlayer.getUniqueId());
+                            return info != null ? info.satir2 : "";
+                        });
+
+                        tabPlaceholdersRegistered = true;
+                        FlanEstate.LOGGER.info("TAB Integration registered successfully!");
                     }
-                });
-
-                // Register TAB placeholders
-                TabAPI.getInstance().getPlaceholderManager().registerPlayerPlaceholder("%emlak_baslik%", 1000, tabPlayer -> {
-                    EmlakInfo info = cache.get(tabPlayer.getUniqueId());
-                    return info != null ? info.baslik : "";
-                });
-
-                TabAPI.getInstance().getPlaceholderManager().registerPlayerPlaceholder("%emlak_satir1%", 1000, tabPlayer -> {
-                    EmlakInfo info = cache.get(tabPlayer.getUniqueId());
-                    return info != null ? info.satir1 : "";
-                });
-
-                TabAPI.getInstance().getPlaceholderManager().registerPlayerPlaceholder("%emlak_satir2%", 1000, tabPlayer -> {
-                    EmlakInfo info = cache.get(tabPlayer.getUniqueId());
-                    return info != null ? info.satir2 : "";
-                });
-
-                FlanEstate.LOGGER.info("TAB Integration registered successfully!");
-            } catch (Throwable t) {
-                FlanEstate.LOGGER.error("Failed to register TAB integration. Is TAB installed?", t);
+                } catch (Throwable t) {
+                    FlanEstate.LOGGER.error("Failed to register TAB integration. Is TAB installed?", t);
+                }
             }
         });
     }
