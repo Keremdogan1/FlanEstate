@@ -19,7 +19,7 @@ public class RentManager {
     public static void register() {
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             tickCounter++;
-            if (tickCounter >= 1200) { // Check every 1 minute (1200 ticks)
+            if (tickCounter >= 20) { // Check every 1 saniye (20 ticks)
                 tickCounter = 0;
 
                 EstateState estateState = EstateState.getServerState(server);
