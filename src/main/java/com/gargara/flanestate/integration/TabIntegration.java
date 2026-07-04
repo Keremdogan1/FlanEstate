@@ -19,11 +19,13 @@ public class TabIntegration {
         public String baslik = "";
         public String satir1 = "";
         public String satir2 = "";
+        public String satir3 = "";
 
-        public EmlakInfo(String baslik, String satir1, String satir2) {
+        public EmlakInfo(String baslik, String satir1, String satir2, String satir3) {
             this.baslik = baslik;
             this.satir1 = satir1;
             this.satir2 = satir2;
+            this.satir3 = satir3;
         }
     }
 
@@ -57,6 +59,11 @@ public class TabIntegration {
                         TabAPI.getInstance().getPlaceholderManager().registerPlayerPlaceholder("%emlak_satir2%", 1000, tabPlayer -> {
                             EmlakInfo info = cache.get(tabPlayer.getUniqueId());
                             return info != null ? info.satir2 : "";
+                        });
+
+                        TabAPI.getInstance().getPlaceholderManager().registerPlayerPlaceholder("%emlak_satir3%", 1000, tabPlayer -> {
+                            EmlakInfo info = cache.get(tabPlayer.getUniqueId());
+                            return info != null ? info.satir3 : "";
                         });
 
                         tabPlaceholdersRegistered = true;
@@ -158,7 +165,7 @@ public class TabIntegration {
                 satir2 = "&7Ev Durumu: &cYok";
             }
 
-            cache.put(pUuid, new EmlakInfo("&6&l🏠 Emlak Varlıkları", satir1, satir2));
+            cache.put(pUuid, new EmlakInfo("&6&l🏠 Emlak Varlıkları", satir1, satir2, "&7Detaylar: &f/emlak"));
         }
     }
 

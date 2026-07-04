@@ -27,6 +27,13 @@ public class CommandManager {
                 }
                 return 1;
             })
+            .then(literal("menü").executes(context -> {
+                ServerPlayerEntity player = context.getSource().getPlayer();
+                if (player != null) {
+                    GuiHandler.openEmlakGui(player);
+                }
+                return 1;
+            }))
             .then(literal("isim").executes(context -> {
                 ServerPlayerEntity player = context.getSource().getPlayer();
                 if (player != null) {
@@ -39,6 +46,16 @@ public class CommandManager {
                     } else {
                         player.sendMessage(Text.literal("§cBu işlem için kendi arazinizin içinde olmalısınız!"), false);
                     }
+                }
+                return 1;
+            }))
+            .then(literal("yardim").executes(context -> {
+                ServerPlayerEntity player = context.getSource().getPlayer();
+                if (player != null) {
+                    player.sendMessage(Text.literal("§6--- Emlak Komutları ---"), false);
+                    player.sendMessage(Text.literal("§f/emlak §7- Mülk ve Kira menüsünü açar."), false);
+                    player.sendMessage(Text.literal("§f/emlak isim §7- İçinde bulunduğunuz arazinin adını değiştirir."), false);
+                    player.sendMessage(Text.literal("§f/emlak yardim §7- Bu yardım sayfasını gösterir."), false);
                 }
                 return 1;
             }))
