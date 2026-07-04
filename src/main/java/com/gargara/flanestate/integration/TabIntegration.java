@@ -90,17 +90,19 @@ public class TabIntegration {
             for (java.util.Map.Entry<java.util.UUID, EstateState.RentedProperty> entry : estateState.getRentedProperties().entrySet()) {
                 EstateState.RentedProperty prop = entry.getValue();
                 if (prop.renterUuid.equals(pUuid)) {
-                    rentedCount++;
                     Claim rClaim = storage.getFromUUID(entry.getKey());
-                    if (rClaim != null) singleRentedClaim = rClaim;
-                    
-                    long elapsedTime = currentTime - prop.lastPaidTime;
-                    long remainingTicks = 24000 - elapsedTime;
-                    if (remainingTicks < 0) remainingTicks = 0;
-                    
-                    if (remainingTicks < minRemaining) {
-                        minRemaining = remainingTicks;
-                        nearestRent = prop;
+                    if (rClaim != null) {
+                        rentedCount++;
+                        singleRentedClaim = rClaim;
+                        
+                        long elapsedTime = currentTime - prop.lastPaidTime;
+                        long remainingTicks = 24000 - elapsedTime;
+                        if (remainingTicks < 0) remainingTicks = 0;
+                        
+                        if (remainingTicks < minRemaining) {
+                            minRemaining = remainingTicks;
+                            nearestRent = prop;
+                        }
                     }
                 }
             }

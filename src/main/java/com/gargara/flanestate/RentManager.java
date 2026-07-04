@@ -7,6 +7,8 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -19,26 +21,45 @@ public class RentManager {
             tickCounter++;
             if (tickCounter >= 1200) { // Check every 1 minute (1200 ticks)
                 tickCounter = 0;
-                
+
                 EstateState estateState = EstateState.getServerState(server);
                 PlayerDataState playerData = PlayerDataState.getServerState(server);
                 ClaimStorage claimStorage = ClaimStorage.get(server.getOverworld());
-                
+
                 long currentTime = server.getOverworld().getTimeOfDay();
-                
+
+                // --- Sahipsiz kira temizleme: Claim silinmişse kaydı sil ---
+                List<UUID> toRemove = new ArrayList<>();
+                for (Map.Entry<UUID, EstateState.RentedProperty> entry : estateState.getRentedProperties().entrySet()) {
+                    UUID claimUuid = entry.getKey();
+                    Claim claim = claimStorage.getFromUUID(claimUuid);
+                    if (claim == null) {
+                        toRemove.add(claimUuid);
+                        // Kiracıya bildir (çevrimiçiyse)
+                        ServerPlayerEntity renter = server.getPlayerManager().getPlayer(entry.getValue().renterUuid);
+                        if (renter != null) {
+                            renter.sendMessage(Text.literal("§e[Emlak] Kirada olduğunuz mülk artık mevcut değil. Kira kaydınız silindi."), false);
+                        }
+                    }
+                }
+                for (UUID id : toRemove) {
+                    estateState.removeRentedProperty(id);
+                }
+
+                // --- Kira ödeme kontrolü ---
                 for (Map.Entry<UUID, EstateState.RentedProperty> entry : estateState.getRentedProperties().entrySet()) {
                     EstateState.RentedProperty prop = entry.getValue();
                     UUID claimUuid = entry.getKey();
-                    
+
                     // Only process if the renter is online
                     ServerPlayerEntity renter = server.getPlayerManager().getPlayer(prop.renterUuid);
                     if (renter != null) {
                         // Check if an in-game day (24000 ticks) has passed since last payment
                         if (currentTime - prop.lastPaidTime >= 24000) {
-                            
+
                             double balance = playerData.getBalance(prop.renterUuid);
                             Claim claim = claimStorage.getFromUUID(claimUuid);
-                            
+
                             if (claim != null) {
                                 if (balance >= prop.price) {
                                     // Pay rent
@@ -46,7 +67,7 @@ public class RentManager {
                                         playerData.addBalance(prop.ownerUuid, prop.price);
                                         prop.lastPaidTime = currentTime;
                                         estateState.markDirty();
-                                        
+
                                         renter.sendMessage(Text.literal("§a[Emlak] Kiranız başarıyla ödendi: " + prop.price + " AK Lira."), false);
 
                                         // Unlock if it was locked
@@ -62,7 +83,7 @@ public class RentManager {
                                     if (!prop.lockedOut) {
                                         prop.lockedOut = true;
                                         claim.setPlayerGroup(prop.renterUuid, null, true); // Remove from Co-Owner
-                                        
+
                                         // Teleport out if they are inside the claim
                                         Claim currentClaim = ClaimStorage.get((net.minecraft.server.world.ServerWorld) renter.getWorld()).getClaimAt(renter.getBlockPos());
                                         if (currentClaim != null && currentClaim.getClaimID().equals(claim.getClaimID())) {

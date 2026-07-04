@@ -40,3 +40,13 @@ replay_*.log
 *.jfr
 
 FlanSrc/
+Claim.java
+ClaimEvents.java
+ClaimStorage.java
+PlayerClaimData.java
+Test.class
+Test.java
+Test2.java
+Test3.java
+Test4.java
+cfr.jar
