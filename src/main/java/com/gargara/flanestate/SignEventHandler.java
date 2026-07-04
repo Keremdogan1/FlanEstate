@@ -72,7 +72,7 @@ public class SignEventHandler {
                                 if (balance >= price) {
                                     if (state.removeBalance(serverPlayer.getUuid(), price)) {
                                         state.addBalance(ownerUuid, price);
-                                        claim.setPlayerGroup(serverPlayer.getUuid(), "Co-Owner", true);
+                                        storage.transferOwner(claim, serverPlayer.getUuid());
                                         world.breakBlock(pos, false);
                                         serverPlayer.sendMessage(Text.literal("§aEv başarıyla satın alındı! " + price + " AK Lira kesildi."), false);
                                     }

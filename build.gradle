@@ -10,6 +10,7 @@ repositories {
 	flatDir {
 		dirs 'libs'
 	}
+	maven { url "https://maven.nucleoid.xyz/" }
 }
 
 loom {
@@ -35,6 +36,9 @@ dependencies {
 	
 	// TAB API
 	modCompileOnly name: 'TAB_v4.1.6'
+	
+	// sgui
+	modImplementation "eu.pb4:sgui:1.2.2+1.20"
 }
 
 jar {

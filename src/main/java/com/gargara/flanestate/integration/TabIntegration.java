@@ -78,91 +78,98 @@ public class TabIntegration {
             if (storage == null) continue;
 
             UUID pUuid = player.getUuid();
-            Claim currentClaim = storage.getClaimAt(player.getBlockPos());
-            
-            // 1. Is player standing inside a claim they rent or own?
-            if (currentClaim != null) {
-                if (currentClaim.getOwner().equals(pUuid)) {
-                    cache.put(pUuid, getOwnedInfo(currentClaim));
-                    continue;
-                }
-                
-                EstateState.RentedProperty rp = estateState.getRentedProperties().get(currentClaim.getClaimID());
-                if (rp != null && rp.renterUuid.equals(pUuid)) {
-                    cache.put(pUuid, getRentedInfo(currentClaim, rp, currentTime));
-                    continue;
+            java.util.Collection<Claim> ownedClaims = storage.allClaimsFromPlayer(pUuid);
+            int ownedCount = ownedClaims.size();
+            String singleOwnedName = ownedCount == 1 ? getClaimNameSafe(ownedClaims.iterator().next(), player) : "";
+
+            int rentedCount = 0;
+            EstateState.RentedProperty nearestRent = null;
+            long minRemaining = Long.MAX_VALUE;
+            Claim singleRentedClaim = null;
+
+            for (java.util.Map.Entry<java.util.UUID, EstateState.RentedProperty> entry : estateState.getRentedProperties().entrySet()) {
+                EstateState.RentedProperty prop = entry.getValue();
+                if (prop.renterUuid.equals(pUuid)) {
+                    rentedCount++;
+                    Claim rClaim = storage.getFromUUID(entry.getKey());
+                    if (rClaim != null) singleRentedClaim = rClaim;
+                    
+                    long elapsedTime = currentTime - prop.lastPaidTime;
+                    long remainingTicks = 24000 - elapsedTime;
+                    if (remainingTicks < 0) remainingTicks = 0;
+                    
+                    if (remainingTicks < minRemaining) {
+                        minRemaining = remainingTicks;
+                        nearestRent = prop;
+                    }
                 }
             }
             
-            // 2. Not standing in their claim. Find rented properties with nearest rent payment.
-            EstateState.RentedProperty nearestRent = null;
-            Claim nearestClaim = null;
-            long minRemaining = Long.MAX_VALUE;
+            String singleRentedName = rentedCount == 1 && singleRentedClaim != null ? getClaimNameSafe(singleRentedClaim, player) : "";
 
-            for (Map.Entry<UUID, EstateState.RentedProperty> entry : estateState.getRentedProperties().entrySet()) {
-                EstateState.RentedProperty prop = entry.getValue();
-                if (prop.renterUuid.equals(pUuid)) {
-                    long remaining = 24000 - (currentTime - prop.lastPaidTime);
-                    if (remaining < minRemaining) {
-                        minRemaining = remaining;
-                        nearestRent = prop;
-                        nearestClaim = storage.getFromUUID(entry.getKey());
+            Claim currentClaim = storage.getClaimAt(player.getBlockPos());
+            
+            String satir1 = "&7Ev Durumu: &cYok";
+            String satir2 = "&7Kira: &cYok";
+
+            // İçindeyse durumu belirt
+            boolean isInsideOwned = currentClaim != null && currentClaim.getOwner() != null && currentClaim.getOwner().equals(pUuid);
+            boolean isInsideRented = false;
+            EstateState.RentedProperty currentRentProp = null;
+            
+            if (currentClaim != null) {
+                for (java.util.Map.Entry<java.util.UUID, EstateState.RentedProperty> entry : estateState.getRentedProperties().entrySet()) {
+                    EstateState.RentedProperty prop = entry.getValue();
+                    if (entry.getKey().equals(currentClaim.getClaimID()) && prop.renterUuid.equals(pUuid)) {
+                        isInsideRented = true;
+                        currentRentProp = prop;
+                        break;
                     }
                 }
             }
 
-            if (nearestRent != null && nearestClaim != null) {
-                cache.put(pUuid, getRentedInfo(nearestClaim, nearestRent, currentTime));
-                continue;
+            // Satır 1 mantığı (Sahiplik)
+            if (isInsideOwned) {
+                satir1 = "&a📍 İçinde: &f" + getClaimNameSafe(currentClaim, player);
+            } else if (ownedCount > 1) {
+                satir1 = "&aSahip: &f" + ownedCount + " Mülk";
+            } else if (ownedCount == 1) {
+                satir1 = "&aSahip: &f" + singleOwnedName;
             }
 
-            // 3. Optional: If no rented properties, could show owned property (but skipped to save performance, and user usually knows their house unless inside it).
-            // Clear if nothing applies
-            cache.put(pUuid, new EmlakInfo("&6&l🏠 Emlak Varlıkları", "&7Ev Durumu: &cYok", "&7Kira: &cYok"));
+            // Satır 2 mantığı (Kira)
+            if (isInsideRented && currentRentProp != null) {
+                long elapsedTime = currentTime - currentRentProp.lastPaidTime;
+                long remainingTicks = 24000 - elapsedTime;
+                if (remainingTicks < 0) remainingTicks = 0;
+                long mins = (remainingTicks / 20) / 60;
+                satir2 = "&e📍 Kira: &f" + getClaimNameSafe(currentClaim, player) + " (&c" + currentRentProp.price + "₺ &7- &a" + mins + "m&f)";
+            } else if (rentedCount > 0 && nearestRent != null) {
+                long mins = (minRemaining / 20) / 60;
+                String namePrefix = rentedCount > 1 ? rentedCount + " Mülk" : singleRentedName;
+                satir2 = "&eKira: &f" + namePrefix + " (&c" + nearestRent.price + "₺ &7- &a" + mins + "m&f)";
+            }
+            
+            // Eğer kirada olduğu bir evdeyse ve hiç evi yoksa 1. satırı da Kira olarak göster (daha temiz gözükür)
+            if (isInsideRented && ownedCount == 0) {
+                satir1 = satir2;
+                satir2 = "&7Ev Durumu: &cYok";
+            }
+
+            cache.put(pUuid, new EmlakInfo("&6&l🏠 Emlak Varlıkları", satir1, satir2));
         }
     }
 
-    private static EmlakInfo getOwnedInfo(Claim claim) {
-        String name = getClaimNameSafe(claim);
-        // Calculate volume or area safely if possible
-        String size = getClaimSizeSafe(claim);
-        return new EmlakInfo(
-            "&6&l🏠 Emlak Varlıkları",
-            "&aSahip: &f" + name,
-            "&7" + size
-        );
-    }
-
-    private static EmlakInfo getRentedInfo(Claim claim, EstateState.RentedProperty prop, long currentTime) {
-        String name = getClaimNameSafe(claim);
-        long remainingTicks = 24000 - (currentTime - prop.lastPaidTime);
-        if (remainingTicks < 0) remainingTicks = 0;
-        
-        long remainingSeconds = remainingTicks / 20;
-        long mins = remainingSeconds / 60;
-        long secs = remainingSeconds % 60;
-        String timeStr = String.format("%02d:%02d", mins, secs);
-
-        return new EmlakInfo(
-            "&6&l🏠 Emlak Varlıkları",
-            "&eKira: &f" + name,
-            "&c" + (int)prop.price + "₺ &7- Sonraki: &a" + timeStr
-        );
-    }
-
-    private static String getClaimNameSafe(Claim claim) {
+    private static String getClaimNameSafe(Claim claim, ServerPlayerEntity player) {
         try {
             String name = claim.getClaimName();
-            if (name != null && !name.trim().isEmpty()) {
-                return name;
+            if (name != null) {
+                name = name.replace(" " + player.getName().getString(), "");
+                if (name.equals("Admin") || name.trim().isEmpty()) return "Arazi";
+                return name.trim();
             }
         } catch (Throwable t) {
-            // Ignored
         }
         return "Arazi";
-    }
-
-    private static String getClaimSizeSafe(Claim claim) {
-        return "Mülkünüz";
     }
 }
