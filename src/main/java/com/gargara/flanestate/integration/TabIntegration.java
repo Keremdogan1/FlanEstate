@@ -20,12 +20,14 @@ public class TabIntegration {
         public String satir1 = "";
         public String satir2 = "";
         public String satir3 = "";
+        public String satir4 = "";
 
-        public EmlakInfo(String baslik, String satir1, String satir2, String satir3) {
+        public EmlakInfo(String baslik, String satir1, String satir2, String satir3, String satir4) {
             this.baslik = baslik;
             this.satir1 = satir1;
             this.satir2 = satir2;
             this.satir3 = satir3;
+            this.satir4 = satir4;
         }
     }
 
@@ -64,6 +66,11 @@ public class TabIntegration {
                         TabAPI.getInstance().getPlaceholderManager().registerPlayerPlaceholder("%emlak_satir3%", 1000, tabPlayer -> {
                             EmlakInfo info = cache.get(tabPlayer.getUniqueId());
                             return info != null ? info.satir3 : "";
+                        });
+
+                        TabAPI.getInstance().getPlaceholderManager().registerPlayerPlaceholder("%emlak_satir4%", 1000, tabPlayer -> {
+                            EmlakInfo info = cache.get(tabPlayer.getUniqueId());
+                            return info != null ? info.satir4 : "";
                         });
 
                         tabPlaceholdersRegistered = true;
@@ -120,6 +127,8 @@ public class TabIntegration {
             
             String satir1 = "&7Ev Durumu: &cYok";
             String satir2 = "&7Kira: &cYok";
+            String satir3 = "&7Bir sonraki kira: &cYok";
+            String satir4 = "&7Detaylar: &f/emlak";
 
             // İçindeyse durumu belirt
             boolean isInsideOwned = currentClaim != null && currentClaim.getOwner() != null && currentClaim.getOwner().equals(pUuid);
@@ -146,26 +155,22 @@ public class TabIntegration {
                 satir1 = "&aSahip: &f" + singleOwnedName;
             }
 
-            // Satır 2 mantığı (Kira)
+            // Satır 2 & 3 mantığı (Kira)
             if (isInsideRented && currentRentProp != null) {
+                satir2 = "&e📍 Kira: &f" + getClaimNameSafe(currentClaim, player) + " (&c" + currentRentProp.price + "₺&f)";
                 long elapsedTime = currentTime - currentRentProp.lastPaidTime;
                 long remainingTicks = 24000 - elapsedTime;
                 if (remainingTicks < 0) remainingTicks = 0;
                 long mins = (remainingTicks / 20) / 60;
-                satir2 = "&e📍 Kira: &f" + getClaimNameSafe(currentClaim, player) + " (&c" + currentRentProp.price + "₺ &7- &a" + mins + "m&f)";
+                satir3 = "&7Bir sonraki kira: &a" + mins + "m";
             } else if (rentedCount > 0 && nearestRent != null) {
-                long mins = (minRemaining / 20) / 60;
                 String namePrefix = rentedCount > 1 ? rentedCount + " Mülk" : singleRentedName;
-                satir2 = "&eKira: &f" + namePrefix + " (&c" + nearestRent.price + "₺ &7- &a" + mins + "m&f)";
-            }
-            
-            // Eğer kirada olduğu bir evdeyse ve hiç evi yoksa 1. satırı da Kira olarak göster (daha temiz gözükür)
-            if (isInsideRented && ownedCount == 0) {
-                satir1 = satir2;
-                satir2 = "&7Ev Durumu: &cYok";
+                satir2 = "&eKira: &f" + namePrefix + " (&c" + nearestRent.price + "₺&f)";
+                long mins = (minRemaining / 20) / 60;
+                satir3 = "&7Bir sonraki kira: &a" + mins + "m";
             }
 
-            cache.put(pUuid, new EmlakInfo("&6&l🏠 Emlak Varlıkları", satir1, satir2, "&7Detaylar: &f/emlak"));
+            cache.put(pUuid, new EmlakInfo("&6&l🏠 Emlak Varlıkları", satir1, satir2, satir3, satir4));
         }
     }
 
