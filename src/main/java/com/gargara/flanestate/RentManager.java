@@ -99,9 +99,8 @@ public class RentManager {
                                             renter.sendMessage(Text.literal("§c[Emlak] Kirayı ödeyemediğiniz için evinize girişiniz kilitlendi!"), false);
                                         }
                                         estateState.markDirty();
-                                    } else {
-                                        renter.sendMessage(Text.literal("§c[Emlak] Kilitli evinizin kirası gecikti. Lütfen para yükleyin."), false);
                                     }
+                                    // lockedOut zaten true ise tekrar mesaj gönderme (spam önleme)
                                 }
                             }
                         }
