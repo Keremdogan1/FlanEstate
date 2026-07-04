@@ -127,7 +127,7 @@ public class TabIntegration {
             
             String satir1 = "&7Ev Durumu: &cYok";
             String satir2 = "&7Kira: &cYok";
-            String satir3 = "&7Bir sonraki kira: &cYok";
+            String satir3 = "";
             String satir4 = "&7Detaylar: &f/emlak";
 
             // İçindeyse durumu belirt
